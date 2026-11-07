@@ -62,8 +62,10 @@ body.open #p2{opacity:1;visibility:visible}
 .opening .flapw{transform:rotateX(180deg);z-index:0;filter:none}
 .opening .letter{transform:translateY(-62%)}
 .opening .hint{opacity:0}
-.snd{position:fixed;right:14px;bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:30;width:42px;height:42px;border-radius:50%;border:1px solid rgba(155,35,53,.5);background:rgba(255,250,243,.9);color:#9b2335;display:none;align-items:center;justify-content:center;cursor:pointer;padding:0}
+.snd{position:fixed;right:14px;bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:30;width:42px;height:42px;border-radius:50%;border:1px solid rgba(155,35,53,.5);background:rgba(255,250,243,.9);color:#9b2335;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
 .snd.on{display:flex}.snd.muted{opacity:.6}
+.audio-status{position:fixed;right:64px;bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:29;display:none;max-width:min(280px,calc(100vw - 90px));padding:8px 12px;border-radius:6px;background:rgba(28,1,8,.92);color:var(--cream);font-size:14px}
+.audio-status.show{display:block}
 
 /* ---- Page 2 ---- */
 .sheet{width:min(100vw,520px);margin:0 auto;container-type:inline-size;color:var(--red);text-align:center;background:#e9e4d9}
@@ -138,23 +140,44 @@ body.open #p2{opacity:1;visibility:visible}
  </div>
 </section>
 
-<button class="snd" id="snd" type="button" aria-label="Toggle music"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9 18V5l11-2v13M9 18a3 3 0 1 1-3-3 3 3 0 0 1 3 3Zm11-2a3 3 0 1 1-3-3 3 3 0 0 1 3 3Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></button>
+<audio id="bgMusic" src="nikah-music.mp3" loop preload="none"></audio>
+<span class="audio-status" id="audioStatus" role="status" aria-live="polite"></span>
+<button class="snd" id="snd" type="button" aria-label="Play music" aria-pressed="false"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9 18V5l11-2v13M9 18a3 3 0 1 1-3-3 3 3 0 0 1 3 3Zm11-2a3 3 0 1 1-3-3 3 3 0 0 1 3 3Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></button>
 <script>
 (function(){
-  var MUSIC=''; /* data: URL of an mp3 for background music */
-  var audio=null,snd=document.getElementById('snd');
-  if(MUSIC){audio=new Audio(MUSIC);audio.loop=true;audio.volume=.5;snd.classList.add('on');snd.addEventListener('click',function(){if(audio.paused){audio.play();snd.classList.remove('muted')}else{audio.pause();snd.classList.add('muted')}});}
-  var ov=document.getElementById('ov'),env=document.getElementById('env'),p1=document.getElementById('p1'),done=false;
-  document.getElementById('chand').classList.add('in');
-  setTimeout(function(){ov.classList.add('show')},6600);
-  p1.addEventListener('click',function(){ov.classList.add('show')});
-  env.addEventListener('click',function(e){
-    e.stopPropagation();
-    if(done)return;done=true;
-    if(audio){audio.play().catch(function(){});}
-    p1.classList.add('opening');
-    setTimeout(function(){document.body.classList.add('open')},3600);
+  var bgAudio=document.getElementById('bgMusic');
+  var musicButton=document.getElementById('snd');
+  var audioStatus=document.getElementById('audioStatus');
+
+  function updateMusicButton(){
+    var playing=!bgAudio.paused&&!bgAudio.ended;
+    var muted=bgAudio.muted;
+    musicButton.classList.toggle('muted',!playing||muted);
+    musicButton.setAttribute('aria-label',!playing?'Play music':muted?'Unmute music':'Mute music');
+    musicButton.setAttribute('aria-pressed',String(playing&&!muted));
+  }
+
+  musicButton.addEventListener('click',function(){
+    audioStatus.classList.remove('show');
+    if(bgAudio.paused||bgAudio.ended){
+      bgAudio.muted=false;
+      bgAudio.play().catch(function(){
+        audioStatus.textContent='Music could not be played. Make sure nikah-music.mp3 is uploaded beside this page.';
+        audioStatus.classList.add('show');
+        updateMusicButton();
+      });
+    }else{
+      bgAudio.muted=!bgAudio.muted;
+      updateMusicButton();
+    }
   });
+
+  bgAudio.addEventListener('play',updateMusicButton);
+  bgAudio.addEventListener('pause',updateMusicButton);
+  bgAudio.addEventListener('ended',updateMusicButton);
+  bgAudio.addEventListener('volumechange',updateMusicButton);
+  updateMusicButton();
+
   var T=new Date(2026,10,21,17,30,0); /* Nikah date and time: year, month (0 = January), day, hour, minute */
   var M=['January','February','March','April','May','June','July','August','September','October','November','December'];
   function o(n){var a=['th','st','nd','rd'],v=n%100;return n+(a[(v-20)%10]||a[v]||a[0]);}

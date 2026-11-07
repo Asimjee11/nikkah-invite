@@ -145,6 +145,22 @@ body.open #p2{opacity:1;visibility:visible}
 <button class="snd" id="snd" type="button" aria-label="Play music" aria-pressed="false"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9 18V5l11-2v13M9 18a3 3 0 1 1-3-3 3 3 0 0 1 3 3Zm11-2a3 3 0 1 1-3-3 3 3 0 0 1 3 3Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></button>
 <script>
 (function(){
+  var overlay=document.getElementById('ov');
+  var envelope=document.getElementById('env');
+  var reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  window.setTimeout(function(){
+    overlay.classList.add('show');
+  },reducedMotion?100:1800);
+
+  envelope.addEventListener('click',function(){
+    if(envelope.classList.contains('opening'))return;
+    envelope.classList.add('opening');
+    window.setTimeout(function(){
+      document.body.classList.add('open');
+    },reducedMotion?100:1600);
+  });
+
   var bgAudio=document.getElementById('bgMusic');
   var musicButton=document.getElementById('snd');
   var audioStatus=document.getElementById('audioStatus');
